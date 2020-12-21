@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@apollo/react-hooks";
 import PetsList from "../components/PetsList";
 import NewPetModal from "../components/NewPetModal";
 import Loader from "../components/Loader";
+import { OPTIMISTIC_ID } from '../../constants';
 
 const AllPets = gql`
   query AllPets {
@@ -33,11 +34,31 @@ export default function Pets() {
   const { data, error, loading } = useQuery(AllPets);
   const [
     createPet,
-    { data: mutationData, error: mutationError, loading: mutationLoading },
-  ] = useMutation(CreatePet);
+    { data: mutationData, error: mutationError },
+  ] = useMutation(CreatePet, {
+    update: (cache, { data: { addPet } }) => {
+      const { pets } = cache.readQuery({ query: AllPets });
+      cache.writeQuery({
+        query: AllPets,
+        data: { pets: [addPet, ...data.pets] },
+      });
+    },
+  });
 
   const onSubmit = (params) => {
-    createPet({ variables: { newPet: params } });
+    createPet({
+      variables: { newPet: params },
+      optimisticResponse: {
+        __typename: "Mutation",
+        addPet: {
+          __typename: "Pet",
+          id: OPTIMISTIC_ID,
+          img: "https://via.placeholder.com/300",
+          name: params.name,
+          type: params.type,
+        },
+      },
+    });
     setModal(false);
   };
 
@@ -49,7 +70,7 @@ export default function Pets() {
     return <h1>ERROR!</h1>;
   }
 
-  if (loading || mutationLoading) {
+  if (loading) {
     return <Loader />;
   }
 
