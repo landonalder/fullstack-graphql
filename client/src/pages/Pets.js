@@ -5,45 +5,55 @@ import { useQuery, useMutation } from "@apollo/react-hooks";
 import PetsList from "../components/PetsList";
 import NewPetModal from "../components/NewPetModal";
 import Loader from "../components/Loader";
-import { OPTIMISTIC_ID } from '../../constants';
+import { OPTIMISTIC_ID } from "../../constants";
+
+const PETS_FIELDS = gql`
+  fragment PetsFields on Pet {
+    id
+    img
+    name
+    type
+    vaccinated @client
+    owner {
+      id
+      age @client
+    }
+  }
+`;
 
 const AllPets = gql`
   query AllPets {
     pets {
-      id
-      img
-      name
-      type
+      ...PetsFields
     }
   }
+  ${PETS_FIELDS}
 `;
 
 const CreatePet = gql`
   mutation CreatePet($newPet: NewPetInput!) {
     addPet(input: $newPet) {
-      id
-      img
-      name
-      type
+      ...PetsFields
     }
   }
+  ${PETS_FIELDS}
 `;
 
 export default function Pets() {
   const [modal, setModal] = useState(false);
   const { data, error, loading } = useQuery(AllPets);
-  const [
-    createPet,
-    { data: mutationData, error: mutationError },
-  ] = useMutation(CreatePet, {
-    update: (cache, { data: { addPet } }) => {
-      const { pets } = cache.readQuery({ query: AllPets });
-      cache.writeQuery({
-        query: AllPets,
-        data: { pets: [addPet, ...data.pets] },
-      });
-    },
-  });
+  const [createPet, { data: mutationData, error: mutationError }] = useMutation(
+    CreatePet,
+    {
+      update: (cache, { data: { addPet } }) => {
+        const { pets } = cache.readQuery({ query: AllPets });
+        cache.writeQuery({
+          query: AllPets,
+          data: { pets: [addPet, ...data.pets] },
+        });
+      },
+    }
+  );
 
   const onSubmit = (params) => {
     createPet({
@@ -73,6 +83,8 @@ export default function Pets() {
   if (loading) {
     return <Loader />;
   }
+
+  console.log(data.pets[0]);
 
   return (
     <div className="page pets-page">
