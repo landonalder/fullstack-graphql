@@ -17,6 +17,7 @@ const typeDefs = gql`
 
   type Pet {
     id: ID!
+    img: String!
     createdAt: String!
     name: String!
     type: PetType!

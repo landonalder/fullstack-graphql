@@ -1,33 +1,88 @@
-import React, {useState} from 'react'
-import gql from 'graphql-tag'
-import PetBox from '../components/PetBox'
-import NewPet from '../components/NewPet'
-import { useQuery, useMutation } from '@apollo/react-hooks'
-import Loader from '../components/Loader'
+import React, { useState } from "react";
+import gql from "graphql-tag";
+import { useQuery, useMutation } from "@apollo/react-hooks";
 
-export default function Pets () {
-  const [modal, setModal] = useState(false)
-  
-  const onSubmit = input => {
-    setModal(false)
+import PetsList from "../components/PetsList";
+import NewPetModal from "../components/NewPetModal";
+import Loader from "../components/Loader";
+import { OPTIMISTIC_ID } from "../../constants";
+
+const PETS_FIELDS = gql`
+  fragment PetsFields on Pet {
+    id
+    img
+    name
+    type
+    vaccinated @client
+    owner {
+      id
+      age @client
+    }
+  }
+`;
+
+const AllPets = gql`
+  query AllPets {
+    pets {
+      ...PetsFields
+    }
+  }
+  ${PETS_FIELDS}
+`;
+
+const CreatePet = gql`
+  mutation CreatePet($newPet: CreatePetInput!) {
+    createPet(input: $newPet) {
+      ...PetsFields
+    }
+  }
+  ${PETS_FIELDS}
+`;
+
+export default function Pets() {
+  const [modal, setModal] = useState(false);
+  const { data, error, loading } = useQuery(AllPets);
+  const [createPet, { data: mutationData, error: mutationError }] = useMutation(
+    CreatePet,
+    {
+      update: (cache, { data: { createPet } }) => {
+        const { pets } = cache.readQuery({ query: AllPets });
+        cache.writeQuery({
+          query: AllPets,
+          data: { pets: [createPet, ...data.pets] },
+        });
+      },
+    }
+  );
+
+  const onSubmit = (params) => {
+    createPet({
+      variables: { newPet: params },
+      optimisticResponse: {
+        __typename: "Mutation",
+        createPet: {
+          __typename: "Pet",
+          id: OPTIMISTIC_ID,
+          img: "https://via.placeholder.com/300",
+          name: params.name,
+          type: params.type,
+          owner: data.pets[0].owner
+        },
+      },
+    });
+    setModal(false);
+  };
+
+  if (modal) {
+    return <NewPetModal onSubmit={onSubmit} onCancel={() => setModal(false)} />;
   }
 
-  const petsList = pets.data.pets.map(pet => (
-    <div className="col-xs-12 col-md-4 col" key={pet.id}>
-      <div className="box">
-        <PetBox pet={pet} />
-      </div>
-    </div>
-  ))
-  
-  if (modal) {
-    return (
-      <div className="row center-xs">
-        <div className="col-xs-8">
-          <NewPet onSubmit={onSubmit} onCancel={() => setModal(false)}/>
-        </div>
-      </div>
-    )
+  if (error || mutationError) {
+    return <h1>ERROR!</h1>;
+  }
+
+  if (loading) {
+    return <Loader />;
   }
 
   return (
@@ -44,10 +99,8 @@ export default function Pets () {
         </div>
       </section>
       <section>
-        <div className="row">
-          {petsList}
-        </div>
+        <PetsList pets={data.pets} />
       </section>
     </div>
-  )
+  );
 }
