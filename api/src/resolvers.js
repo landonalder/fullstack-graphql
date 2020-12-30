@@ -12,11 +12,18 @@ module.exports = {
       const filter = input ? { id: parseInt(input.id) } : undefined;
       return models.Pet.findOne(filter);
     },
+    user: (_, __, { models }) => {
+      return models.User.findOne();
+    }
   },
   Mutation: {
     createPet: (_, { input }, { models }) => {
       return models.Pet.create(input);
     },
+    deletePet: async (_, { petId }, { models }) => {
+      const deletedPetId = await models.Pet.delete(petId);
+      return { id: deletedPetId };
+    }
   },
   Pet: {
     img: (pet) =>

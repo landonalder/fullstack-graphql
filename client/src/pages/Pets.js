@@ -1,47 +1,16 @@
 import React, { useState } from "react";
-import gql from "graphql-tag";
 import { useQuery, useMutation } from "@apollo/react-hooks";
 
 import PetsList from "../components/PetsList";
 import NewPetModal from "../components/NewPetModal";
 import Loader from "../components/Loader";
+import { AllPets, CreatePet, GetUser } from "../graphQL";
 import { OPTIMISTIC_ID } from "../../constants";
-
-const PETS_FIELDS = gql`
-  fragment PetsFields on Pet {
-    id
-    img
-    name
-    type
-    vaccinated @client
-    owner {
-      id
-      age @client
-    }
-  }
-`;
-
-const AllPets = gql`
-  query AllPets {
-    pets {
-      ...PetsFields
-    }
-  }
-  ${PETS_FIELDS}
-`;
-
-const CreatePet = gql`
-  mutation CreatePet($newPet: CreatePetInput!) {
-    createPet(input: $newPet) {
-      ...PetsFields
-    }
-  }
-  ${PETS_FIELDS}
-`;
 
 export default function Pets() {
   const [modal, setModal] = useState(false);
   const { data, error, loading } = useQuery(AllPets);
+  const { data: userData, error: userQueryError } = useQuery(GetUser);
   const [createPet, { data: mutationData, error: mutationError }] = useMutation(
     CreatePet,
     {
@@ -66,7 +35,7 @@ export default function Pets() {
           img: "https://via.placeholder.com/300",
           name: params.name,
           type: params.type,
-          owner: data.pets[0].owner
+          owner: userData.user.id,
         },
       },
     });
@@ -77,7 +46,7 @@ export default function Pets() {
     return <NewPetModal onSubmit={onSubmit} onCancel={() => setModal(false)} />;
   }
 
-  if (error || mutationError) {
+  if (error || mutationError || userQueryError) {
     return <h1>ERROR!</h1>;
   }
 

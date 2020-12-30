@@ -1,11 +1,12 @@
-const low = require('lowdb')
-const FileSync = require('lowdb/adapters/FileSync')
-
-const adapter = new FileSync('api/src/db/db.json')
-const db = low(adapter)
-
 const createPetModel = require('./pet')
-const createUserModel = require('./user')
+const createUserModel = require('./user');
+const { Client } = require('pg')
+
+const db = new Client({
+  connectionString: 'postgresql://postgres:password@localhost:5432/postgres'
+});
+
+db.connect().then(() => { console.log('Connected to DB!') });
 
 module.exports = {
   models: {
