@@ -40,6 +40,15 @@ export const DeletePet = gql`
     }
 `;
 
+export const UpdatePet = gql`
+    mutation UpdatePet($input: UpdatePetInput!) {
+        updatePet(input: $input) {
+            ...PetsFields
+        }
+    }
+    ${PETS_FIELDS}
+`;
+
 export const GetUser = gql`
     query GetUser {
         user {

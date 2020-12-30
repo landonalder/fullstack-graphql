@@ -24,6 +24,9 @@ module.exports = {
             const deletedPetId = await models.Pet.delete(petId);
             return { id: deletedPetId };
         },
+        updatePet: (_, { input }, { models }) => {
+            return models.Pet.update(input);
+        }
     },
     Pet: {
         img: (pet) => (pet.type === 'DOG' ? 'https://placedog.net/300/300' : 'http://placekitten.com/300/300'),

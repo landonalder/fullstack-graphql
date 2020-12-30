@@ -37,6 +37,16 @@ const createPetModel = (db) => {
 
             return queryResults.rows[0].id;
         },
+
+        async update({ id, name, type }) {
+            const queryResults = await db.query(`UPDATE pet SET name = $2, type = $3 WHERE id = $1 RETURNING *;`, [
+                id,
+                name,
+                type,
+            ]);
+
+            return queryResults.rows[0];
+        },
     };
 };
 

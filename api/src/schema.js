@@ -48,9 +48,16 @@ const typeDefs = gql`
         type: PetType!
     }
 
+    input UpdatePetInput {
+        name: String!
+        type: PetType!
+        id: ID!
+    }
+
     type Mutation {
         createPet(input: CreatePetInput!): Pet!
         deletePet(petId: ID!): DeletePetResponse!
+        updatePet(input: UpdatePetInput!): Pet!
     }
 `;
 

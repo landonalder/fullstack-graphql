@@ -11,9 +11,9 @@ const options = [
     { value: PetType.DOG, label: 'Dog' },
 ];
 
-export default function EditOrCreatePet({ onSubmit, onCancel }) {
-    const [type, setType] = useState(PetType.DOG);
-    const [name, setName] = useState('');
+export default function EditOrCreatePet({ pet, onSubmit, onCancel }) {
+    const [type, setType] = useState(pet ? pet.type : PetType.DOG);
+    const [name, setName] = useState(pet ? pet.name : '');
 
     const activeOption = options.find((o) => o.value === type);
 
@@ -51,7 +51,7 @@ export default function EditOrCreatePet({ onSubmit, onCancel }) {
                         cancel
                     </a>
                     <button type="submit" name="submit">
-                        add pet
+                        {pet ? 'Update' : 'Add Pet'}
                     </button>
                 </form>
             </div>

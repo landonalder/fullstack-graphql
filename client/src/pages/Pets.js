@@ -3,8 +3,9 @@ import { useQuery, useMutation } from '@apollo/react-hooks';
 
 import PetsList from '../components/PetsList';
 import NewPetModal from '../components/NewPetModal';
+import EditPetModal from '../components/EditPetModal';
 import Loader from '../components/Loader';
-import { AllPets, CreatePet, GetUser } from '../graphQL';
+import { AllPets, CreatePet, UpdatePet, GetUser } from '../graphQL';
 import { OPTIMISTIC_ID } from '../../constants';
 
 const Modal = {
@@ -17,7 +18,7 @@ export default function Pets() {
     const [editingPetId, setEditingPetId] = useState(null);
     const { data, error, loading } = useQuery(AllPets);
     const { data: userData, error: userQueryError } = useQuery(GetUser);
-    const [createPet, { data: mutationData, error: mutationError }] = useMutation(CreatePet, {
+    const [createPet, { error: mutationError }] = useMutation(CreatePet, {
         update: (cache, { data: { createPet } }) => {
             const { pets } = cache.readQuery({ query: AllPets });
             cache.writeQuery({
@@ -27,7 +28,26 @@ export default function Pets() {
         },
     });
 
-    const onSubmit = (params) => {
+    const [updatePet, { error: updatePetError }] = useMutation(UpdatePet, {
+        update: (cache, { data: { updatePet } }) => {
+            const { pets } = cache.readQuery({ query: AllPets });
+
+            cache.writeQuery({
+                query: AllPets,
+                data: {
+                    pets: data.pets.map((pet) => {
+                        if (pet.id === updatePet.id) {
+                            return { ...pet, ...updatePet };
+                        }
+
+                        return pet;
+                    }),
+                },
+            });
+        },
+    });
+
+    const onCreateSubmit = (params) => {
         createPet({
             variables: { newPet: params },
             optimisticResponse: {
@@ -38,29 +58,45 @@ export default function Pets() {
                     img: 'https://via.placeholder.com/300',
                     name: params.name,
                     type: params.type,
-                    owner: userData.user.id,
+                    owner: userData.user,
                 },
             },
         });
         setModal(null);
     };
 
+    const onEditSubmit = (params) => {
+        updatePet({
+            variables: { input: { id: editingPetId, ...params } },
+            optimisticResponse: {
+                __typename: 'Mutation',
+                updatePet: {
+                    __typename: 'Pet',
+                    id: editingPetId,
+                    img: 'https://via.placeholder.com/300',
+                    name: params.name,
+                    type: params.type,
+                    owner: userData.user,
+                },
+            },
+        });
+        setModal(null);
+        setEditingPetId(null);
+    };
+
     if (modal) {
         return modal === Modal.CREATE ? (
-            <NewPetModal onSubmit={onSubmit} onCancel={() => setModal(null)} />
+            <NewPetModal onSubmit={onCreateSubmit} onCancel={() => setModal(null)} />
         ) : (
             <EditPetModal
                 onCancel={() => setModal(null)}
-                onSubmit={() => {
-                    console.log('submitted!');
-                }}
-                petId={editingPetId}
-                pets={data.pets}
+                onSubmit={onEditSubmit}
+                pet={data.pets.find(({ id }) => id === editingPetId)}
             />
         );
     }
 
-    if (error || mutationError || userQueryError) {
+    if (error || mutationError || userQueryError || updatePetError) {
         return <h1>ERROR!</h1>;
     }
 
