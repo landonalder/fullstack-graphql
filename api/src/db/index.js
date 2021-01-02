@@ -1,5 +1,6 @@
 const createPetModel = require('./pet');
 const createUserModel = require('./user');
+const createToyModel = require('./toy');
 const { Client } = require('pg');
 
 const db = new Client({
@@ -13,6 +14,7 @@ db.connect().then(() => {
 module.exports = {
     models: {
         Pet: createPetModel(db),
+        Toy: createToyModel(db),
         User: createUserModel(db),
     },
     db,

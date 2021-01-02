@@ -6,6 +6,7 @@ export const PETS_FIELDS = gql`
         img
         name
         type
+        toys
         vaccinated @client
         owner {
             id

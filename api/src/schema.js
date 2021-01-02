@@ -22,6 +22,7 @@ const typeDefs = gql`
         name: String!
         type: PetType!
         owner: User!
+        toys: String
     }
 
     type DeletePetResponse {

@@ -26,11 +26,16 @@ module.exports = {
         },
         updatePet: (_, { input }, { models }) => {
             return models.Pet.update(input);
-        }
+        },
     },
     Pet: {
         img: (pet) => (pet.type === 'DOG' ? 'https://placedog.net/300/300' : 'http://placekitten.com/300/300'),
-        owner: (pet, _, { models, user }) => models.User.findOne({ id: pet.user }),
+        owner: (pet, _, { models }) => models.User.findOne({ id: pet.user }),
+        toys: async (pet, _, { models }) => {
+            const toys = await models.Toy.findMany({ pet_id: pet.id });
+
+            return toys.map(({ name }) => name).join(', ');
+        },
     },
     User: {
         pets: (user, _, { models }) => models.Pet.findMany({ user: user.id }),

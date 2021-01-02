@@ -1,14 +1,17 @@
+const format = require('pg-format');
+
 const getWhereClauseFromFilter = (filter) =>
     Object.keys(filter)
-        .map((key) => `${key}=${filter[key]}`)
+        .map((key) => format('%I = %L', key, filter[key]))
         .join(' AND ');
 
 const createPetModel = (db) => {
     return {
         async findMany(filter) {
             const queryResults = await db.query(
-                `SELECT * FROM pet ${filter ? `WHERE $1` : ''} ORDER BY created_at DESC;`,
-                filter ? [getWhereClauseFromFilter(filter)] : []
+                `SELECT * FROM pet ${
+                    filter ? `WHERE $${getWhereClauseFromFilter(filter)}` : ''
+                } ORDER BY created_at DESC;`
             );
 
             return queryResults.rows;
@@ -16,8 +19,7 @@ const createPetModel = (db) => {
 
         async findOne(filter) {
             const queryResults = await db.query(
-                `SELECT * FROM pet ${filter ? `WHERE $1` : ''} LIMIT 1;`,
-                filter ? [getWhereClauseFromFilter(filter)] : []
+                `SELECT * FROM pet ${filter ? `WHERE ${getWhereClauseFromFilter(filters)}` : ''} LIMIT 1;`
             );
 
             return queryResults.rows[0];

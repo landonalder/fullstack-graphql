@@ -17,3 +17,10 @@ INSERT INTO pet(name, type, owner_id) VALUES
     ('Darryl', 'CAT', (SELECT id FROM users WHERE username = 'lalder')),
     ('George', 'CAT', (SELECT id FROM users WHERE username = 'lalder')),
     ('Buddy', 'DOG', (SELECT id FROM users WHERE username = 'lalder')); 
+
+CREATE TABLE IF NOT EXISTS toy (
+    id SERIAL PRIMARY KEY NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    name TEXT NOT NULL,
+    pet_id INTEGER REFERENCES pet
+);
